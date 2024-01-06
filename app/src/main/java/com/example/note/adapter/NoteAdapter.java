@@ -3,6 +3,8 @@ package com.example.note.adapter;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,17 +19,22 @@ import com.makeramen.roundedimageview.RoundedImageView;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder> {
 
     private List<Note> notes ;
     private NoteListener noteListener;
-
+    private List<Note> notesResource;
+    private Timer timer;
 
     public NoteAdapter(List<Note> notes, NoteListener noteListener) {
         this.notes = notes;
         this.noteListener = noteListener;
+        notesResource = notes;
     }
 
     @NonNull
@@ -63,6 +70,33 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
         return position;
     }
 
+    public void searchNote(final String keyword){
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (keyword.trim().isEmpty()){
+                    notes= notesResource;
+                }else {
+                    ArrayList<Note> temp= new ArrayList<>();
+                    for (Note note: notesResource) {
+                        if(note.getTitle().toLowerCase().contains(keyword.toLowerCase())
+                        || note.getSubtitle().toLowerCase().contains(keyword.toLowerCase())
+                        || note.getNoteText().toLowerCase().contains(keyword.toLowerCase())){
+                            temp.add(note);
+                        }
+                    }
+                    notes = temp;
+                }
+                new Handler(Looper.getMainLooper()).post(() -> notifyDataSetChanged());
+            }
+        },500);
+    }
+    public void cancelTimer(){
+        if(timer != null){
+            timer.cancel();
+        }
+    }
     static class NoteViewHolder extends RecyclerView.ViewHolder{
 
         TextView txtTitle, txtSubTitle, txtDateTime;
@@ -75,7 +109,6 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
             txtDateTime = itemView.findViewById(R.id.txtNoteDateTime);
             layoutNote = itemView.findViewById(R.id.layoutNote);
             imageNote= itemView.findViewById(R.id.imageNote);
-
         }
         void setNote(Note note){
             txtTitle.setText(note.getTitle());
@@ -99,7 +132,6 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
                 imageNote.setVisibility(View.GONE);
             }
         }
-
-
     }
+
 }

@@ -19,8 +19,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
-
-
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -30,9 +28,11 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.os.Bundle;
-import com.example.note.adapter.NoteAdapter;
+
 import com.example.note.entity.Note;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 
 import java.io.InputStream;
@@ -40,6 +40,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import java.util.Locale;
+import java.util.Objects;
 
 public class CreateNoteActivity extends AppCompatActivity {
 
@@ -51,12 +52,11 @@ public class CreateNoteActivity extends AppCompatActivity {
     private String selectImagePath;
     private ImageView imageNote ;
     private AlertDialog dialogAddUrl, dialogDelete;
+    FirebaseDatabase database;
+    DatabaseReference noteRef;
 
     private static final int REQUEST_CODE_STORAGE_PERMISSION = 1;
     private Note alreadyAvailableNote;
-
-    NoteAdapter adapter;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,9 +64,7 @@ public class CreateNoteActivity extends AppCompatActivity {
         ImageView imageBack = findViewById(R.id.imageBack);
         ImageView btnDone = findViewById(R.id.imageSave);
 
-        imageBack.setOnClickListener(v->{
-            finish();
-        });
+        imageBack.setOnClickListener(v-> finish());
         txtTitle = findViewById(R.id.txtNoteTitle);
         txtSubtitle = findViewById(R.id.txtInputSubtitle);
         txtNote  = findViewById(R.id.txtInputNote);
@@ -80,18 +78,12 @@ public class CreateNoteActivity extends AppCompatActivity {
         txtWebUrl = findViewById(R.id.txtWebUrl);
         layoutWebUrl = findViewById(R.id.layoutWebUrl);
         viewSubTitleIndicator= findViewById(R.id.viewSubtitleIndicator);
-        btnDone.setOnClickListener(v->{
-            saveNote();
-        });
+        btnDone.setOnClickListener(v-> saveNote());
 
         selectNoteColor = "#333333";
         selectImagePath= "";
         initMiscellaneous();
         setViewSubTitleIndicator();
-        if(getIntent().getBooleanExtra("isViewOrUpdate", false)){
-            alreadyAvailableNote = (Note) getIntent().getSerializableExtra("note");
-            setViewOrUpdate();
-        }
 
         findViewById(R.id.imageRemoveImage).setOnClickListener(v ->{
             imageNote.setImageBitmap(null);
@@ -104,30 +96,16 @@ public class CreateNoteActivity extends AppCompatActivity {
             layoutWebUrl.setVisibility(View.GONE);
 
         });
-
-
-    }
-        private void setViewOrUpdate(){
-        if(alreadyAvailableNote != null)  {
-            txtTitle.setText(alreadyAvailableNote.getTitle());
-            txtSubtitle.setText(alreadyAvailableNote.getSubtitle());
-            txtNote.setText(alreadyAvailableNote.getNoteText());
-            txtDateTime.setText(alreadyAvailableNote.getDatetime());
-            if(alreadyAvailableNote.getImagePath()!= null
-                    && alreadyAvailableNote.getImagePath().trim().isEmpty()){
-                imageNote.setImageBitmap(BitmapFactory.decodeFile(alreadyAvailableNote.getImagePath()));
-                imageNote.setVisibility(View.VISIBLE);
-                findViewById(R.id.imageRemoveImage).setVisibility(View.GONE);
-                selectImagePath = alreadyAvailableNote.getImagePath();
-            }
-            if (alreadyAvailableNote.getWebLink()!= null && alreadyAvailableNote.getWebLink().trim().isEmpty()){
-                txtWebUrl.setText(alreadyAvailableNote.getWebLink());
-                layoutWebUrl.setVisibility(View.VISIBLE);
-
-            }
-
+        database = FirebaseDatabase.getInstance();
+        noteRef = database.getReference("Note");
+        if(getIntent().getBooleanExtra("isViewOrUpdate", false)){
+            alreadyAvailableNote = (Note) getIntent().getSerializableExtra("note");
+            setViewOrUpdate();
         }
     }
+
+
+
     private void saveNote() {
         if (txtTitle.getText().toString().trim().isEmpty()) {
             Toast.makeText(this, "Không để trống", Toast.LENGTH_SHORT).show();
@@ -148,28 +126,33 @@ public class CreateNoteActivity extends AppCompatActivity {
         if(layoutWebUrl.getVisibility()== View.VISIBLE){
             note.setWebLink(txtWebUrl.getText().toString());
         }
-        if(alreadyAvailableNote != null){
-            note.setId(alreadyAvailableNote.getId());
+        String noteID;
+        if (alreadyAvailableNote != null) {
+            noteID = alreadyAvailableNote.getId();
+        } else {
+            noteID = noteRef.push().getKey();
         }
-
-        // test chưa thêm vô database
-        Intent resultIntent = new Intent();
-        resultIntent.putExtra("note_title", note.getTitle());
-        resultIntent.putExtra("note_subtitle", note.getSubtitle());
-        resultIntent.putExtra("note_text", note.getNoteText());
-        resultIntent.putExtra("note_datetime", note.getDatetime());
-        resultIntent.putExtra("note_color", note.getColor());
-        resultIntent.putExtra("note_image_path", note.getImagePath());
-        resultIntent.putExtra("note_url", note.getWebLink());
-
-        // Set the result code to RESULT_OK
-        setResult(RESULT_OK, resultIntent);
-
-        // Finish the activity
+        note.setId(noteID);
+        noteRef.child(noteID).setValue(note);
         finish();
     }
+    private void setViewOrUpdate(){
+        txtTitle.setText(alreadyAvailableNote.getTitle());
+        txtSubtitle.setText(alreadyAvailableNote.getSubtitle());
+        txtNote.setText(alreadyAvailableNote.getNoteText());
+        txtDateTime.setText(alreadyAvailableNote.getDatetime());
+        txtWebUrl.setText(alreadyAvailableNote.getWebLink());
+        if(alreadyAvailableNote.getImagePath()!= null && !alreadyAvailableNote.getImagePath().trim().isEmpty()){
+            imageNote.setImageBitmap(BitmapFactory.decodeFile(alreadyAvailableNote.getImagePath()));
+            imageNote.setVisibility(View.VISIBLE);
+            selectImagePath= alreadyAvailableNote.getImagePath();
 
-
+        }
+        if(alreadyAvailableNote.getWebLink() != null && !alreadyAvailableNote.getWebLink().trim().isEmpty()){
+            txtWebUrl.setText(alreadyAvailableNote.getWebLink());
+            layoutWebUrl.setVisibility(View.VISIBLE);
+        }
+    }
 
     private void initMiscellaneous(){
         LinearLayout linearLayout = findViewById(R.id.layoutMiscellaneous);
@@ -233,7 +216,7 @@ public class CreateNoteActivity extends AppCompatActivity {
         });
          if(alreadyAvailableNote != null
                  && alreadyAvailableNote.getColor() != null
-                 && alreadyAvailableNote.getColor().trim().isEmpty()){
+                 && !alreadyAvailableNote.getColor().trim().isEmpty()){
              switch (alreadyAvailableNote.getColor()){
                  case "#FDBE3B" :
                      linearLayout.findViewById(R.id.viewColor2).performClick();
@@ -269,38 +252,48 @@ public class CreateNoteActivity extends AppCompatActivity {
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             showAddUrlDialog();
         });
-        if(alreadyAvailableNote!= null){
-            linearLayout.findViewById(R.id.layoutDeleteNote).setVisibility(View.VISIBLE);
-            linearLayout.findViewById(R.id.layoutDeleteNote).setOnClickListener(v->{
-                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-                showDeleteDialog();
-            });
-        }
+
+        linearLayout.findViewById(R.id.layoutDeleteNote).setVisibility(View.VISIBLE);
+        linearLayout.findViewById(R.id.layoutDeleteNote).setOnClickListener(v->{
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            showDeleteDialog();
+        });
 
     }
-    public void showDeleteDialog(){
-        if(dialogDelete!= null){
+    public void showDeleteDialog() {
+        if (dialogDelete == null) {
             AlertDialog.Builder builder = new AlertDialog.Builder(CreateNoteActivity.this);
-            View view =  LayoutInflater.from(this).inflate(
+            View view = LayoutInflater.from(this).inflate(
                     R.layout.layout_delete_note,
-                    (ViewGroup) findViewById(R.id.layoutDeleteNoteContainer)
-
+                    findViewById(R.id.layoutDeleteNoteContainer)
             );
             builder.setView(view);
             dialogDelete = builder.create();
-            if(dialogDelete.getWindow()!= null){
+            if (dialogDelete.getWindow() != null) {
                 dialogDelete.getWindow().setBackgroundDrawable(new ColorDrawable(0));
             }
-            view.findViewById(R.id.btnDelete).setOnClickListener(v->{
-                // delete note ở đây
+
+            view.findViewById(R.id.btnDelete).setOnClickListener(v -> {
+                if (alreadyAvailableNote != null) {
+                    String noteID = alreadyAvailableNote.getId();
+
+                    // Remove the note from Firebase
+                    noteRef.child(noteID).removeValue();
+
+                    Toast.makeText(CreateNoteActivity.this, "Note deleted", Toast.LENGTH_SHORT).show();
+                    finish();
+                }
             });
-            view.findViewById(R.id.btnCancel).setOnClickListener(v->{
+
+            view.findViewById(R.id.btnCancel).setOnClickListener(v -> {
                 dialogDelete.dismiss();
             });
         }
+
         assert dialogDelete != null;
         dialogDelete.show();
     }
+
     private void setViewSubTitleIndicator(){
         GradientDrawable gradientDrawable = (GradientDrawable) viewSubTitleIndicator.getBackground();
         gradientDrawable.setColor(Color.parseColor(selectNoteColor));

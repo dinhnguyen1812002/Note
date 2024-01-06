@@ -1,7 +1,10 @@
 package com.example.note.entity;
 
-public class Note {
-    private Integer id;
+import java.io.Serializable;
+
+public class Note  implements Serializable{
+    private static final long serialVersionUID = 1L;
+    private String id;
     private String title;
     private String datetime;
     private String subtitle;
@@ -16,23 +19,23 @@ public class Note {
         this.noteText = noteText;
     }
 
-    public Note() {
-    }
-
-    public Integer getId() {
+    public String getId() {
         return id;
     }
 
-    public Note(String title, String datetime, String noteText, String color,  String imagePath) {
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public Note() {
+    }
+
+    public Note(String title, String datetime, String noteText, String color, String imagePath) {
         this.title = title;
         this.datetime = datetime;
         this.noteText = noteText;
         this.color = color;
         this.imagePath = imagePath;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
     }
 
     public String getTitle() {
