@@ -1,12 +1,21 @@
 package com.example.note;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Parcelable;
+import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import androidx.activity.result.ActivityResultLauncher;
@@ -15,6 +24,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import android.widget.Toast;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
@@ -27,6 +40,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.io.InputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +53,7 @@ public class MainActivity extends AppCompatActivity implements NoteListener{
     RecyclerView noteRecyclerView;
     FirebaseDatabase database;
     DatabaseReference noteRef;
+    private static final int REQUEST_CODE_STORAGE_PERMISSION = 1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,8 +78,6 @@ public class MainActivity extends AppCompatActivity implements NoteListener{
         txtSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-
             }
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -78,6 +91,11 @@ public class MainActivity extends AppCompatActivity implements NoteListener{
                 }
             }
         });
+        findViewById(R.id.add).setOnClickListener(v-> {
+            Intent intent = new Intent(MainActivity.this, CreateNoteActivity.class);
+            startActivity(intent);
+        });
+
     }
 
     private void getNote(){
@@ -108,6 +126,5 @@ public class MainActivity extends AppCompatActivity implements NoteListener{
         intent.putExtra("note", note);
         startActivity(intent);
     }
-
 
 }

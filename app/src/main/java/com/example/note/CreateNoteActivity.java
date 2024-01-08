@@ -13,6 +13,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.speech.RecognizerIntent;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.LayoutInflater;
@@ -33,14 +34,12 @@ import com.example.note.entity.Note;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-
-
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 import java.util.Locale;
-import java.util.Objects;
 
 public class CreateNoteActivity extends AppCompatActivity {
 
@@ -54,7 +53,6 @@ public class CreateNoteActivity extends AppCompatActivity {
     private AlertDialog dialogAddUrl, dialogDelete;
     FirebaseDatabase database;
     DatabaseReference noteRef;
-
     private static final int REQUEST_CODE_STORAGE_PERMISSION = 1;
     private Note alreadyAvailableNote;
     @Override
@@ -102,10 +100,9 @@ public class CreateNoteActivity extends AppCompatActivity {
             alreadyAvailableNote = (Note) getIntent().getSerializableExtra("note");
             setViewOrUpdate();
         }
+        findViewById(R.id.imageSpeech).setOnClickListener(this::speak);
+
     }
-
-
-
     private void saveNote() {
         if (txtTitle.getText().toString().trim().isEmpty()) {
             Toast.makeText(this, "Không để trống", Toast.LENGTH_SHORT).show();
@@ -231,7 +228,6 @@ public class CreateNoteActivity extends AppCompatActivity {
                      linearLayout.findViewById(R.id.viewColor5).performClick();
                      break;
              }
-
          }
         linearLayout.findViewById(R.id.layoutAddImage).setOnClickListener(v->{
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
@@ -391,5 +387,23 @@ public class CreateNoteActivity extends AppCompatActivity {
         }
         dialogAddUrl.show();
     }
+    public void speak(View view){
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE,Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,"Start Speaking");
+        speechResultLauncher.launch(intent);
+    }
+
+    ActivityResultLauncher<Intent> speechResultLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK) {
+                    Intent data = result.getData();
+                    ArrayList<String> text = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                    String spokenText = text.get(0);
+                    txtNote.setText(spokenText);
+                }
+            });
 
 }

@@ -84,7 +84,7 @@
                         android:id="@+id/add"
                         android:layout_marginStart="15dp"
                         android:contentDescription="@string/app_name"
-                        android:src="@drawable/ic_add"
+
                         app:tint="@color/colorIcons"/>
                 <ImageView
                         android:layout_width="23dp"
@@ -92,7 +92,7 @@
                         android:id="@+id/addImage"
                         android:layout_marginStart="15dp"
                         android:contentDescription="@string/app_name"
-                        android:src="@drawable/ic_image"
+
                         app:tint="@color/colorIcons"/>
                 <ImageView
                         android:layout_width="23dp"
@@ -100,7 +100,7 @@
                         android:id="@+id/addLink"
                         android:layout_marginStart="15dp"
                         android:contentDescription="@string/app_name"
-                        android:src="@drawable/ic_web_link"
+
                         app:tint="@color/colorIcons"/>
 
         </LinearLayout>
